@@ -1,0 +1,63 @@
+# docker-compose.prod.yml — Surcouche PRODUCTION pour glpi.saiddev.fr
+# Usage sur le VPS :
+#   docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+#
+# Pré-requis sur le VPS :
+#   - Docker + Compose v2 installés
+#   - Domaine glpi.saiddev.fr pointant (A/AAAA) vers l'IP du VPS
+#   - Réseau Docker externe "web" : docker network create web
+#   - Fichier .env complété (mots de passe FORTS + DOMAIN_NAME=saiddev.fr + ACME_EMAIL)
+
+services:
+
+  traefik:
+    image: traefik:v3.1
+    container_name: traefik
+    restart: unless-stopped
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --certificatesresolvers.le.acme.tlschallenge=true
+      - --certificatesresolvers.le.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.le.acme.storage=/letsencrypt/acme.json
+      - --log.level=INFO
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./data/traefik/letsencrypt:/letsencrypt
+    networks: [web]
+
+  glpi:
+    # Pas de port exposé en prod : Traefik route via le réseau interne
+    ports: !reset []
+    networks: [glpi-net, web]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.glpi.rule=Host(`glpi.${DOMAIN_NAME}`)"
+      - "traefik.http.routers.glpi.entrypoints=websecure"
+      - "traefik.http.routers.glpi.tls.certresolver=le"
+      - "traefik.http.services.glpi.loadbalancer.server.port=80"
+      # Headers sécurité de base
+      - "traefik.http.middlewares.sec-headers.headers.framedeny=true"
+      - "traefik.http.middlewares.sec-headers.headers.contenttypenosniff=true"
+      - "traefik.http.middlewares.sec-headers.headers.referrerpolicy=strict-origin"
+      - "traefik.http.middlewares.sec-headers.headers.stsseconds=31536000"
+      - "traefik.http.routers.glpi.middlewares=sec-headers@docker"
+
+  phpmyadmin:
+    # phpMyAdmin volontairement non exposé en prod (sécurité).
+    # Pour y accéder : tunnel SSH → ssh -L 8081:localhost:8081 user@vps
+    ports: !reset []
+    networks: [glpi-net]
+    profiles: [admin]    # ne démarre que si --profile admin
+
+networks:
+  web:
+    external: true

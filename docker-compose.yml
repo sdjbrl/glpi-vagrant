@@ -1,0 +1,64 @@
+name: glpi-iris
+
+services:
+  db:
+    image: mariadb:10.11
+    container_name: glpi-db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE}
+      MYSQL_USER: ${MYSQL_USER}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+      TZ: ${TZ:-Europe/Paris}
+    volumes:
+      - ./data/mysql_data:/var/lib/mysql
+      - ./configs/mariadb:/etc/mysql/conf.d:ro
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [glpi-net]
+
+  glpi:
+    image: diouxx/glpi:latest
+    container_name: glpi-app
+    hostname: glpi-app
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: glpi-db
+      DB_USER: ${MYSQL_USER}
+      DB_PASSWORD: ${MYSQL_PASSWORD}
+      DB_NAME: ${MYSQL_DATABASE}
+      TIMEZONE: ${TZ:-Europe/Paris}
+      VERSION_GLPI: ${GLPI_VERSION:-10.0.18}
+    ports:
+      - "80:80"
+    volumes:
+      - ./data/glpi_data/files:/var/www/html/glpi/files
+      - ./data/glpi_data/plugins:/var/www/html/glpi/plugins
+      - ./configs/php/glpi-custom.ini:/usr/local/etc/php/conf.d/glpi-custom.ini:ro
+    networks: [glpi-net]
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin:latest
+    container_name: glpi-phpmyadmin
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      UPLOAD_LIMIT: 64M
+    ports:
+      - "8081:80"
+    networks: [glpi-net]
+
+networks:
+  glpi-net:
+    driver: bridge

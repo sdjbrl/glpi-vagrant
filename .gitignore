@@ -1,0 +1,12 @@
+# Données persistantes — ne jamais versionner
+data/
+glpi_data/
+mysql_data/
+
+# Vagrant
+.vagrant/
+*.log
+ubuntu-xenial-16.04-cloudimg-console.log
+
+# Secrets
+.env
