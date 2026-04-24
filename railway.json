@@ -5,7 +5,6 @@
     "dockerfilePath": "railway/Dockerfile"
   },
   "deploy": {
-    "startCommand": "/usr/sbin/apache2ctl -D FOREGROUND",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 5
   }

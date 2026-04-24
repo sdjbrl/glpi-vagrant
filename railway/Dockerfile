@@ -14,5 +14,5 @@ RUN chmod +x /usr/local/bin/railway-entrypoint.sh
 ENV PORT=80
 EXPOSE 80
 
+# Pas de CMD : /opt/glpi-start.sh (appelé par notre entrypoint) gère Apache + init GLPI
 ENTRYPOINT ["/usr/local/bin/railway-entrypoint.sh"]
-CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
