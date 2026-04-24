@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # railway-entrypoint.sh — déploie GLPI sur Railway de manière fiable
-set -uo pipefail
+set -o pipefail
 
 PORT="${PORT:-80}"
 GLPI_VERSION="${GLPI_VERSION:-10.0.18}"
