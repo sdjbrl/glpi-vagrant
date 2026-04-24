@@ -15,4 +15,4 @@ ENV PORT=80
 EXPOSE 80
 
 ENTRYPOINT ["/usr/local/bin/railway-entrypoint.sh"]
-CMD ["apache2-foreground"]
+CMD ["/usr/sbin/apache2ctl", "-D", "FOREGROUND"]
