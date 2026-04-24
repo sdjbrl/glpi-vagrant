@@ -77,5 +77,18 @@ service cron start >/dev/null 2>&1 || true
 echo "[railway] Test config Apache :"
 apache2ctl configtest 2>&1 || { echo "[railway] !! configtest FAILED"; exit 1; }
 
+# Source les envvars Apache (APACHE_RUN_USER, APACHE_LOG_DIR, etc.)
+if [ -f /etc/apache2/envvars ]; then
+  set -a
+  . /etc/apache2/envvars
+  set +a
+fi
+
+# Crée les répertoires runtime si manquants
+mkdir -p "${APACHE_RUN_DIR:-/var/run/apache2}" "${APACHE_LOG_DIR:-/var/log/apache2}" "${APACHE_LOCK_DIR:-/var/lock/apache2}"
+
 echo "[railway] === Apache démarre sur :${PORT} → ${DOCROOT} ==="
-exec /usr/sbin/apache2ctl -D FOREGROUND
+echo "[railway] APACHE_RUN_DIR=${APACHE_RUN_DIR}  APACHE_LOG_DIR=${APACHE_LOG_DIR}"
+
+# Lance apache2 directement (pas le wrapper apache2ctl) pour rester PID 1 et logger sur stdout
+exec /usr/sbin/apache2 -D FOREGROUND -e info
