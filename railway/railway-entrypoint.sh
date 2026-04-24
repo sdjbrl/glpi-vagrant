@@ -53,16 +53,22 @@ else
 fi
 echo "[railway] DocumentRoot=${DOCROOT}  Version=${LOCAL_VER}"
 
-# 5) Conf Apache : Listen + VirtualHost sur $PORT
-sed -ri "s/^Listen 80$/Listen ${PORT}/" /etc/apache2/ports.conf
+# 5) Conf Apache : ports.conf reecrit + VirtualHost sur $PORT
+cat > /etc/apache2/ports.conf <<EOF
+Listen ${PORT}
+EOF
+
+# Force ErrorLog global vers stderr aussi (pour erreurs avant VHost)
+sed -ri 's|^ErrorLog .*|ErrorLog /dev/stderr|' /etc/apache2/apache2.conf || true
 cat > /etc/apache2/sites-available/000-default.conf <<EOF
 <VirtualHost *:${PORT}>
     DocumentRoot ${DOCROOT}
     <Directory ${DOCROOT}>
 ${VHOST_EXTRA}
     </Directory>
-    ErrorLog \${APACHE_LOG_DIR}/error-glpi.log
-    CustomLog \${APACHE_LOG_DIR}/access-glpi.log combined
+    ErrorLog /dev/stderr
+    CustomLog /dev/stdout combined
+    LogLevel info
 </VirtualHost>
 EOF
 
