@@ -11,6 +11,11 @@ if [ "$PORT" != "80" ]; then
   sed -ri "s|VirtualHost \\*:80|VirtualHost *:${PORT}|g" /opt/glpi-start.sh
 fi
 
+# Silence wget (sinon il sature les logs Railway et masque les erreurs Apache)
+sed -ri 's|wget -P|wget -nv -P|g' /opt/glpi-start.sh
+# Marker visible après la fin du script (jamais atteint car apache2ctl bloque, mais signale crash)
+echo 'echo "[railway] apache2ctl a quitté inopinément"' >> /opt/glpi-start.sh
+
 # Mappage vars Railway → vars attendues par glpi-start.sh / GLPI
 export DB_HOST="${MYSQLHOST:-${DB_HOST:-mariadb}}"
 export DB_PORT="${MYSQLPORT:-3306}"
