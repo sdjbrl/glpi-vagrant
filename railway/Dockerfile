@@ -5,14 +5,19 @@
 
 FROM diouxx/glpi:latest
 
-# Pas de RUN apt-get : l'entrypoint n'utilise que sed (déjà présent)
-# Évite les erreurs de clé GPG sury.org du repo PHP de l'image upstream
+# iproute2 pour diagnostiquer les ports en écoute (ss)
+RUN apt-get update --allow-releaseinfo-change || true \
+ && apt-get install -y --no-install-recommends iproute2 \
+ && rm -rf /var/lib/apt/lists/* || true
 
 COPY railway/railway-entrypoint.sh /usr/local/bin/railway-entrypoint.sh
 RUN chmod +x /usr/local/bin/railway-entrypoint.sh
 
+# ServerName global pour supprimer le warning AH00558
+RUN echo "ServerName localhost" > /etc/apache2/conf-available/servername.conf \
+ && a2enconf servername
+
 ENV PORT=80
 EXPOSE 80
 
-# Pas de CMD : /opt/glpi-start.sh (appelé par notre entrypoint) gère Apache + init GLPI
 ENTRYPOINT ["/usr/local/bin/railway-entrypoint.sh"]
