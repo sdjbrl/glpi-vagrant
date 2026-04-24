@@ -9,7 +9,7 @@ RUN apt-get update \
  && apt-get install -y --no-install-recommends gettext-base curl \
  && rm -rf /var/lib/apt/lists/*
 
-COPY railway-entrypoint.sh /usr/local/bin/railway-entrypoint.sh
+COPY railway/railway-entrypoint.sh /usr/local/bin/railway-entrypoint.sh
 RUN chmod +x /usr/local/bin/railway-entrypoint.sh
 
 ENV PORT=80
