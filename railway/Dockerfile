@@ -5,9 +5,8 @@
 
 FROM diouxx/glpi:latest
 
-RUN apt-get update \
- && apt-get install -y --no-install-recommends gettext-base curl \
- && rm -rf /var/lib/apt/lists/*
+# Pas de RUN apt-get : l'entrypoint n'utilise que sed (déjà présent)
+# Évite les erreurs de clé GPG sury.org du repo PHP de l'image upstream
 
 COPY railway/railway-entrypoint.sh /usr/local/bin/railway-entrypoint.sh
 RUN chmod +x /usr/local/bin/railway-entrypoint.sh
